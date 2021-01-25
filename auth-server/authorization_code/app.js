@@ -37,7 +37,6 @@ var stateKey = 'spotify_auth_state';
 var app = express();
 
 app.use(express.static(__dirname + '/public'))
-<<<<<<< HEAD
     .use(cors())
     .use(cookieParser());
 
@@ -46,7 +45,8 @@ app.get('/login', function (req, res) {
     res.cookie(stateKey, state);
 
     // your application requests authorization
-    var scope = 'user-read-private user-read-email user-read-playback-state';
+    var scope =
+        'user-read-private user-read-email user-read-playback-state playlist-modify-private';
     res.redirect(
         'https://accounts.spotify.com/authorize?' +
             querystring.stringify({
@@ -57,26 +57,6 @@ app.get('/login', function (req, res) {
                 state: state,
             })
     );
-=======
-   .use(cors())
-   .use(cookieParser());
-
-app.get('/login', function(req, res) {
-
-  var state = generateRandomString(16);
-  res.cookie(stateKey, state);
-
-  // your application requests authorization
-  var scope = 'user-read-private user-read-email user-read-playback-state playlist-modify-private';
-  res.redirect('https://accounts.spotify.com/authorize?' +
-    querystring.stringify({
-      response_type: 'code',
-      client_id: client_id,
-      scope: scope,
-      redirect_uri: redirect_uri,
-      state: state
-    }));
->>>>>>> 765b2afb14c54a06562d2364ade6074470e7ca2f
 });
 
 app.get('/callback', function (req, res) {
