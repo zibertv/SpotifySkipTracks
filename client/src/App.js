@@ -27,6 +27,8 @@ function App() {
     if (params.access_token) {
       spotifyApi.setAccessToken(params.access_token);
       getNowPlaying();
+      getUserProfile();
+      // checkPlaylistSkip();
     }
   }, []) 
 
@@ -41,21 +43,92 @@ function App() {
     })
   }
 
+  const getUserProfile = async() => {
+    // get profile and set user
+    let userInfo = await spotifyApi.getMe();
+
+    // check if playlist exists
+    let response = await fetch("https://api.spotify.com/v1/me/playlists", {
+      Accept: "application/json",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${params.access_token}`
+      }
+    })
+    let data = await response.json();
+    let exists = false;
+    for (let playlist of data.items) {
+      if (playlist.name === "Skip") {
+        exists = true;
+      }
+    }
+    if (!exists) {
+      response = await fetch(`https://api.spotify.com/v1/users/${userInfo.id}/playlists`, {
+      Accept: "application/json",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${params.access_token}`
+      },
+      body: JSON.stringify({
+        name: "Skip",
+        public: false
+      })
+    })
+    data = await response.json();
+    console.log(data);
+    }
+  }
+
+  // const checkPlaylistSkip = async() => {
+  //   const response = await fetch("https://api.spotify.com/v1/me/playlists", {
+  //     Accept: "application/json",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${params.access_token}`
+  //     }
+  //   })
+  //   const data = await response.json();
+  //   let exists = false;
+  //   for (let playlist of data.items) {
+  //     if (playlist.name === "Skip") {
+  //       exists = true;
+  //     }
+  //   }
+  //   if (!exists) {
+  //     const response = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists}`, {
+  //     Accept: "application/json",
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${params.access_token}`
+  //     }
+  //   })
+  //   }
+  //   console.log(data);
+  // }
+
   
   return (
     <div className="App">
       <div>
-      <a href="http://localhost:8888"><button>Log In with Spotify</button></a>
+      {!loggedIn && (
+        <div>
+          <a href="http://localhost:8888"><button>Log In with Spotify</button></a>
+        </div>) 
+      }
       </div>
+      <div>
         {nowPlaying && (
           <div>
             <div>Now Playing: { nowPlaying.name } </div>
             <div>
               <img src={ nowPlaying.image } />
             </div>
-          </div>) }
-      <div>
-        
+            <button></button>
+          </div>
+          )
+        }
       </div>
     </div>
   );
