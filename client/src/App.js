@@ -18,35 +18,27 @@ function App() {
   const spotifyApi = new SpotifyWebApi();
   const params = getHashParams();
   const [loggedIn, setLoggedIn] = useState(params.access_token ? true : false);
+  const [playlistId, setplaylistId] = useState("");
+  const [userId, setUserId] = useState(""); 
   const [nowPlaying, setNowPlaying] = useState({
     name: 'Not Checked',
-    image: ''
+    image: '',
+    uri: ''
   });
 
   useEffect( () => {
     if (params.access_token) {
       spotifyApi.setAccessToken(params.access_token);
-      getNowPlaying();
       getUserProfile();
+      getNowPlaying();
       // checkPlaylistSkip();
     }
   }, []) 
 
-  const getNowPlaying = () => {
-    spotifyApi.getMyCurrentPlaybackState()
-    .then((response) => {
-      console.log(response);
-      setNowPlaying({
-        name: response.item.name,
-        image: response.item.album.images[0].url
-      })
-    })
-  }
-
   const getUserProfile = async() => {
     // get profile and set user
     let userInfo = await spotifyApi.getMe();
-
+    setUserId(userInfo.id);
     // check if playlist exists
     let response = await fetch("https://api.spotify.com/v1/me/playlists", {
       Accept: "application/json",
@@ -54,12 +46,13 @@ function App() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${params.access_token}`
       }
-    })
+    });
     let data = await response.json();
     let exists = false;
     for (let playlist of data.items) {
       if (playlist.name === "Skip") {
         exists = true;
+        setplaylistId(playlist.id);
       }
     }
     if (!exists) {
@@ -74,41 +67,37 @@ function App() {
         name: "Skip",
         public: false
       })
-    })
+    });
     data = await response.json();
-    console.log(data);
+    setplaylistId(data.id);
     }
   }
 
-  // const checkPlaylistSkip = async() => {
-  //   const response = await fetch("https://api.spotify.com/v1/me/playlists", {
-  //     Accept: "application/json",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${params.access_token}`
-  //     }
-  //   })
-  //   const data = await response.json();
-  //   let exists = false;
-  //   for (let playlist of data.items) {
-  //     if (playlist.name === "Skip") {
-  //       exists = true;
-  //     }
-  //   }
-  //   if (!exists) {
-  //     const response = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists}`, {
-  //     Accept: "application/json",
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${params.access_token}`
-  //     }
-  //   })
-  //   }
-  //   console.log(data);
-  // }
+  const getNowPlaying = async() => {
+    // spotifyApi.getPlaylist(userId, playlistId).then((playlistResponse) => {
+    //   console.log(playlistResponse);
+      spotifyApi.getMyCurrentPlaybackState()
+      .then((response) => {
+        // const skipPlaylist = playlistResponse.tracks.items;
+        // for (let i = 0; i < skipPlaylist.length; i++) {
+        //   if (response.item.id === skipPlaylist[i].track.id) {
 
-  
+        //   }
+        // }
+        console.log(response);
+        setNowPlaying({
+          name: response.item.artists[0].name + " - " + response.item.name,
+          image: response.item.album.images[0].url,
+          uri: response.item.uri
+        })
+      });
+    // });
+  }
+
+  const addToSkipPlaylist = () => {
+    spotifyApi.addTracksToPlaylist(userId, playlistId, [nowPlaying.uri]);
+  }
+
   return (
     <div className="App">
       <div>
@@ -125,7 +114,7 @@ function App() {
             <div>
               <img src={ nowPlaying.image } />
             </div>
-            <button></button>
+            <button onClick={addToSkipPlaylist}>Add to Skip</button>
           </div>
           )
         }
