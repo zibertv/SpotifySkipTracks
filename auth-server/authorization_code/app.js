@@ -17,6 +17,18 @@ var client_id = 'a905de1df03145648fbd6dd381c47876'; // Your client id
 var client_secret = 'b654aa99348b4236a2ec515f8efc87fc'; // Your secret
 var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
 
+const { Pool } = require('pg');
+const pool = new Pool({
+    user: 'slsueczvkjiewh',
+    host: 'ec2-54-162-119-125.compute-1.amazonaws.com',
+    database: 'dd14pf50mrgpcd',
+    password: 'f2250ef24a5f77521cb8cf37289c5848fc9acb64925423e181e99952edf0fea4',
+    port: 5432,
+    ssl: {
+        rejectUnauthorized: false,
+    },
+});
+
 /**
  * Generates a random string containing numbers and letters
  * @param  {number} length The length of the string
@@ -35,6 +47,7 @@ var generateRandomString = function (length) {
 var stateKey = 'spotify_auth_state';
 
 var app = express();
+app.use(express.json());
 
 app.use(express.static(__dirname + '/public'))
     .use(cors())
@@ -152,5 +165,29 @@ app.get('/refresh_token', function (req, res) {
     });
 });
 
+app.post('/uploadToDB', (req, res) => {
+    //upload to db
+    const song = req.body;
+    // console.log(req.body);
+
+    const query = `INSERT INTO track (id, danceability, energy, track_key, loudness, speechiness, acousticness, instrumentalness,
+    liveness, valence, tempo, track_name, artist, album) VALUES ('${song.id}', ${song.danceability}, ${song.energy}, ${song.key}, ${song.loudness}
+        , ${song.speechiness}, ${song.acousticness}, ${song.instrumentalness}, ${song.liveness}, ${song.valence}, ${song.tempo}, '${song.name}', '${song.artists[0].name}', '${song.album.name}');`;
+    console.log(query);
+    pool.query(query, (err, DBres) => {
+        console.log(err, DBres);
+        res.json({
+            message: err || DBres,
+        });
+    });
+});
+
 console.log('Listening on 8888');
 app.listen(8888);
+
+// const createTable = (table) => {
+//     pool.query(table, (err, res) => {
+//         console.log(err, res);
+//         pool.end();
+//     });
+// };
